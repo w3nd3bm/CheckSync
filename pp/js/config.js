@@ -70,7 +70,7 @@ function editarTemplate(templateId, novosItens, novoNome = null) {
 
 // Função para excluir template
 function excluirTemplate(templateId) {
-    if (checklistTemplates[templateId]) {
+    if (checklistTemplates[templateId] && !['prensa_hidraulica', 'bambury', 'caldeira'].includes(templateId)) {
         delete checklistTemplates[templateId];
         localStorage.setItem('checklist_templates', JSON.stringify(checklistTemplates));
         return true;
@@ -87,3 +87,6 @@ function getTemplate(templateId) {
 function listarTemplates() {
     return checklistTemplates;
 }
+
+// Inicializar templates quando o arquivo carregar
+initializeTemplates();
