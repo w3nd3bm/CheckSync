@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Checklist</title>
-    <link rel="stylesheet" href="Style.css">
+    <title>CheckSync - Sistema de Checklist</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <!-- Tela de Login -->
     <div class="container login-container" id="login-screen">
         <header>
-            <h1>Sistema de Checklist</h1>
-            <p>Faça login para acessar o sistema</p>
+            <h1>CheckSync</h1>
+            <p>Sistema de Checklist Inteligente</p>
         </header>
         
         <div class="card">
@@ -151,10 +151,9 @@
                     <label for="maquina">Máquina:</label>
                     <select id="maquina" name="maquina" required>
                         <option value="">Selecione a máquina</option>
-                        <option value="maq001">Máquina 001 - Prensa Hidráulica</option>
-                        <option value="maq002">Máquina 002 - Torno CNC</option>
-                        <option value="maq003">Máquina 003 - Fresadora</option>
-                        <option value="maq004">Máquina 004 - Retífica</option>
+                        <option value="prensa_hidraulica">Prensa Hidráulica</option>
+                        <option value="bambury">Bambury</option>
+                        <option value="caldeira">Caldeira</option>
                     </select>
                 </div>
                 
@@ -165,34 +164,12 @@
                 
                 <div class="form-group">
                     <h3>Itens de Verificação</h3>
-                    
-                    <div class="check-item">
-                        <input type="checkbox" id="item1" name="item1" value="ok">
-                        <label for="item1">Verificar nível de óleo</label>
-                    </div>
-                    
-                    <div class="check-item">
-                        <input type="checkbox" id="item2" name="item2" value="ok">
-                        <label for="item2">Verificar pressão do sistema hidráulico</label>
-                    </div>
-                    
-                    <div class="check-item">
-                        <input type="checkbox" id="item3" name="item3" value="ok">
-                        <label for="item3">Verificar tensão das correias</label>
-                    </div>
-                    
-                    <div class="check-item">
-                        <input type="checkbox" id="item4" name="item4" value="ok">
-                        <label for="item4">Verificar funcionamento dos sensores de segurança</label>
-                    </div>
-                    
-                    <div class="check-item">
-                        <input type="checkbox" id="item5" name="item5" value="ok">
-                        <label for="item5">Limpar área de trabalho</label>
+                    <div class="checklist-itens-container">
+                        <!-- Itens serão carregados dinamicamente -->
                     </div>
                 </div>
                 
-                <div class="form-group">
+                <div class="form-group" id="observacoes-group">
                     <label for="observacoes">Observações:</label>
                     <textarea id="observacoes" name="observacoes" placeholder="Descreva qualquer observação relevante..."></textarea>
                 </div>
@@ -332,9 +309,24 @@
         <div class="card">
             <div class="user-info">
                 <h2 id="admin-welcome">Bem-vindo, Administrador!</h2>
-                <p>Gerencie usuários e configurações do sistema</p>
+                <p>Gerencie usuários, templates e configurações do sistema</p>
             </div>
             
+            <!-- Painel de Templates -->
+            <div class="admin-panel">
+                <h3>Gerenciamento de Templates de Checklist</h3>
+                
+                <div class="btn-group">
+                    <button class="btn btn-success" onclick="showTemplateModal()">Criar Novo Template</button>
+                    <button class="btn" onclick="carregarTemplatesAdmin()">Atualizar Lista</button>
+                </div>
+                
+                <div class="user-list" id="templates-list">
+                    <!-- Lista de templates será preenchida aqui -->
+                </div>
+            </div>
+
+            <!-- Painel de Usuários -->
             <div class="admin-panel">
                 <h3>Gerenciamento de Usuários</h3>
                 
@@ -366,108 +358,7 @@
                     </div>
                 </div>
             </div>
-            <!-- Tela do Administrador - ADICIONAR esta seção -->
-<div class="app-container" id="admin-app">
-    <header>
-        <h1>Painel de Administração</h1>
-        <p id="admin-info">Usuário: </p>
-    </header>
-    
-    <div class="card">
-        <div class="user-info">
-            <h2 id="admin-welcome">Bem-vindo, Administrador!</h2>
-            <p>Gerencie usuários, templates e configurações do sistema</p>
-        </div>
-        
-        <!-- 👇 PAINEL DE TEMPLATES - APENAS AQUI NO ADMIN -->
-        <div class="admin-panel">
-            <h3>📋 Gerenciamento de Templates de Checklist</h3>
             
-            <div class="btn-group">
-                <button class="btn btn-success" onclick="showTemplateModal()">➕ Criar Novo Template</button>
-                <button class="btn" onclick="carregarTemplatesAdmin()">🔄 Atualizar Lista</button>
-            </div>
-            
-            <div class="user-list" id="templates-list">
-                <!-- Lista de templates será preenchida aqui -->
-            </div>
-        </div>
-
-        <!-- 👇 PAINEL DE USUÁRIOS (já existente) -->
-        <div class="admin-panel">
-            <h3>👥 Gerenciamento de Usuários</h3>
-            
-            <div class="btn-group">
-                <button class="btn btn-success" onclick="showCreateUserModal()">Criar Novo Usuário</button>
-                <button class="btn btn-warning" onclick="exportUsers()">Exportar Dados</button>
-                <button class="btn btn-danger" onclick="resetSystem()">Reiniciar Sistema</button>
-            </div>
-            
-            <div class="user-list" id="users-list">
-                <!-- Lista de usuários será preenchida aqui -->
-            </div>
-        </div>
-        
-        <div style="margin-top: 30px;">
-            <h3>Estatísticas do Sistema</h3>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number" id="admin-total-users">0</div>
-                    <div class="stat-label">Total Usuários</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="admin-total-checklists">0</div>
-                    <div class="stat-label">Total Checklists</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="admin-pendentes">0</div>
-                    <div class="stat-label">Pendentes</div>
-                </div>
-            </div>
-        </div>
-        
-        <button class="btn btn-logout" style="width: 100%; margin-top: 25px;" onclick="logout()">Sair do Sistema</button>
-    </div>
-</div>
-
-<!-- 👇 MODAL PARA TEMPLATES - APENAS NO ADMIN -->
-<div class="modal" id="template-modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="template-modal-title">Criar Novo Template</h3>
-            <button class="close-modal" onclick="closeTemplateModal()">&times;</button>
-        </div>
-        
-        <form id="template-form">
-            <input type="hidden" id="template-id">
-            
-            <div class="form-group">
-                <label for="template-nome">Nome do Template:</label>
-                <input type="text" id="template-nome" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Itens do Checklist:</label>
-                <div id="template-itens-container">
-                    <!-- Itens serão adicionados aqui -->
-                </div>
-                <button type="button" class="btn btn-sm" onclick="addTemplateItem()">➕ Adicionar Item</button>
-            </div>
-            
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="template-observacoes" checked>
-                    Incluir campo de observações
-                </label>
-            </div>
-            
-            <div class="btn-group">
-                <button type="submit" class="btn btn-success">Salvar Template</button>
-                <button type="button" class="btn btn-secondary" onclick="closeTemplateModal()">Cancelar</button>
-            </div>
-        </form>
-    </div>
-</div>
             <button class="btn btn-logout" style="width: 100%; margin-top: 25px;" onclick="logout()">Sair do Sistema</button>
         </div>
     </div>
@@ -519,65 +410,53 @@
             </form>
         </div>
     </div>
-    <!-- No admin-app, após a seção de usuários -->
 
-    
-    <div class="btn-group">
-        <button class="btn btn-success" onclick="showTemplateModal()">➕ Criar Novo Template</button>
-        <button class="btn" onclick="carregarTemplatesAdmin()">🔄 Atualizar Lista</button>
-    </div>
-    
-    <div class="user-list" id="templates-list">
-        <!-- Lista de templates será preenchida aqui -->
-    </div>
-
-
-<!-- Modal para Templates -->
-<div class="modal" id="template-modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="template-modal-title">Criar Novo Template</h3>
-            <button class="close-modal" onclick="closeTemplateModal()">&times;</button>
-        </div>
-        
-        <form id="template-form">
-            <input type="hidden" id="template-id">
-            
-            <div class="form-group">
-                <label for="template-nome">Nome do Template:</label>
-                <input type="text" id="template-nome" required>
+    <!-- Modal para Templates -->
+    <div class="modal" id="template-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="template-modal-title">Criar Novo Template</h3>
+                <button class="close-modal" onclick="closeTemplateModal()">&times;</button>
             </div>
             
-            <div class="form-group">
-                <label>Itens do Checklist:</label>
-                <div id="template-itens-container">
-                    <!-- Itens serão adicionados aqui -->
+            <form id="template-form">
+                <input type="hidden" id="template-id">
+                
+                <div class="form-group">
+                    <label for="template-nome">Nome do Template:</label>
+                    <input type="text" id="template-nome" required>
                 </div>
-                <button type="button" class="btn btn-sm" onclick="addTemplateItem()">➕ Adicionar Item</button>
-            </div>
-            
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="template-observacoes" checked>
-                    Incluir campo de observações
-                </label>
-            </div>
-            
-            <div class="btn-group">
-                <button type="submit" class="btn btn-success">Salvar Template</button>
-                <button type="button" class="btn btn-secondary" onclick="closeTemplateModal()">Cancelar</button>
-            </div>
-        </form>
+                
+                <div class="form-group">
+                    <label>Itens do Checklist:</label>
+                    <div id="template-itens-container">
+                        <!-- Itens serão adicionados aqui -->
+                    </div>
+                    <button type="button" class="btn btn-sm" onclick="addTemplateItem()">Adicionar Item</button>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="template-observacoes" checked>
+                        Incluir campo de observações
+                    </label>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-success">Salvar Template</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeTemplateModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
     <!-- Scripts -->
-    <script src="js/app.js,"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/operador.js"></script>
     <script src="js/lider.js"></script>
     <script src="js/gerencia.js"></script>
-    <script src="js/administrador.js"></script>
-    <script src="js/config.js"></script>
+    <script src="js/admin.js"></script>
 </body>
 </html>
