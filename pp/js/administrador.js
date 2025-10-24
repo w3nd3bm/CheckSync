@@ -2,10 +2,13 @@
 function carregarAdmin() {
     loadUsersList();
     updateAdminStats();
+    carregarTemplatesAdmin();
 }
 
 function loadUsersList() {
     const usersList = document.getElementById('users-list');
+    if (!usersList) return;
+    
     usersList.innerHTML = '';
     
     Object.keys(users).forEach(username => {
@@ -33,117 +36,18 @@ function loadUsersList() {
     });
 }
 
-function showCreateUserModal() {
-    document.getElementById('modal-title').textContent = 'Criar Novo Usuário';
-    document.getElementById('user-form').reset();
-    document.getElementById('edit-username').value = '';
-    document.getElementById('modal-username').readOnly = false;
-    document.getElementById('user-modal').style.display = 'flex';
-}
-
-function closeUserModal() {
-    document.getElementById('user-modal').style.display = 'none';
-}
-
-function editUser(username) {
-    const user = users[username];
-    document.getElementById('modal-title').textContent = 'Editar Usuário';
-    document.getElementById('edit-username').value = username;
-    document.getElementById('modal-username').value = username;
-    document.getElementById('modal-username').readOnly = true;
-    document.getElementById('modal-password').value = user.password;
-    document.getElementById('modal-name').value = user.name;
-    document.getElementById('modal-role').value = user.role;
-    document.getElementById('user-modal').style.display = 'flex';
-}
-
-function changePassword(username) {
-    const newPassword = prompt(`Digite a nova senha para ${username}:`, users[username].password);
-    if (newPassword) {
-        users[username].password = newPassword;
-        localStorage.setItem('checklist_users', JSON.stringify(users));
-        loadUsersList();
-        alert('Senha alterada com sucesso!');
-    }
-}
-
-function deleteUser(username) {
-    if (confirm(`Tem certeza que deseja excluir o usuário "${username}"?`)) {
-        delete users[username];
-        localStorage.setItem('checklist_users', JSON.stringify(users));
-        loadUsersList();
-        updateAdminStats();
-        alert('Usuário excluído com sucesso!');
-    }
-}
-
-// Processar formulário de usuário (criar/editar)
-document.getElementById('user-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const editUsername = document.getElementById('edit-username').value;
-    const username = document.getElementById('modal-username').value;
-    const password = document.getElementById('modal-password').value;
-    const name = document.getElementById('modal-name').value;
-    const role = document.getElementById('modal-role').value;
-    
-    if (editUsername) {
-        // Editar usuário existente
-        users[editUsername].password = password;
-        users[editUsername].name = name;
-        users[editUsername].role = role;
-    } else {
-        // Criar novo usuário
-        if (users[username]) {
-            alert('Usuário já existe!');
-            return;
-        }
-        users[username] = {
-            password: password,
-            name: name,
-            role: role,
-            createdAt: new Date().toISOString()
-        };
-    }
-    
-    localStorage.setItem('checklist_users', JSON.stringify(users));
-    loadUsersList();
-    updateAdminStats();
-    closeUserModal();
-    alert(editUsername ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
-});
-
-function updateAdminStats() {
-    document.getElementById('admin-total-users').textContent = Object.keys(users).length;
-    document.getElementById('admin-total-checklists').textContent = historico.length;
-    document.getElementById('admin-pendentes').textContent = checklists.filter(c => c.status === 'pendente').length;
-}
-
-function exportUsers() {
-    const dataStr = JSON.stringify(users, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', 'usuarios_sistema.json');
-    linkElement.click();
-}
-
-function resetSystem() {
-    if (confirm('ATENÇÃO: Isso irá resetar todo o sistema. Tem certeza?')) {
-        localStorage.clear();
-        alert('Sistema reiniciado. A página será recarregada.');
-        location.reload();
-    }
-}
-
-// Funções de Gerenciamento de Templates
+// Templates functions
 function carregarTemplatesAdmin() {
     const templatesList = document.getElementById('templates-list');
     if (!templatesList) return;
     
     templatesList.innerHTML = '';
     const templates = listarTemplates();
+    
+    if (Object.keys(templates).length === 0) {
+        templatesList.innerHTML = '<div class="empty-state">Nenhum template criado ainda</div>';
+        return;
+    }
     
     Object.keys(templates).forEach(templateId => {
         const template = templates[templateId];
@@ -158,17 +62,16 @@ function carregarTemplatesAdmin() {
                 </div>
             </div>
             <div class="template-actions">
-                <button class="btn btn-sm" onclick="editarTemplateModal('${templateId}')">Editar</button>
-                <button class="btn btn-sm btn-warning" onclick="visualizarTemplate('${templateId}')">Visualizar</button>
-                ${templateId !== 'admin' && templateId !== 'gerencia' && templateId !== 'lider' ? 
-                    `<button class="btn btn-sm btn-danger" onclick="excluirTemplateConfirm('${templateId}')">Excluir</button>` : ''}
+                <button class="btn btn-sm" onclick="showTemplateModal('${templateId}')">Editar</button>
+                ${!['prensa_hidraulica', 'bambury', 'caldeira'].includes(templateId) ? 
+                    `<button class="btn btn-sm btn-danger" onclick="excluirTemplateConfirm('${templateId}')">Excluir</button>` : 
+                    '<button class="btn btn-sm btn-secondary" disabled>Padrão</button>'}
             </div>
         `;
         templatesList.appendChild(templateItem);
     });
 }
 
-// Modal para criar/editar templates
 function showTemplateModal(templateId = null) {
     const modal = document.getElementById('template-modal');
     const title = document.getElementById('template-modal-title');
@@ -200,7 +103,6 @@ function showTemplateModal(templateId = null) {
     modal.style.display = 'flex';
 }
 
-// Adicionar item ao template
 function addTemplateItem(texto = '', tipo = 'checkbox', index = null) {
     const container = document.getElementById('template-itens-container');
     const itemIndex = index !== null ? index : container.children.length;
@@ -208,7 +110,7 @@ function addTemplateItem(texto = '', tipo = 'checkbox', index = null) {
     const itemDiv = document.createElement('div');
     itemDiv.className = 'template-item-row';
     itemDiv.innerHTML = `
-        <input type="text" class="template-item-text" placeholder="Descrição do item" value="${texto}">
+        <input type="text" class="template-item-text" placeholder="Descrição do item" value="${texto}" required>
         <select class="template-item-type">
             <option value="checkbox" ${tipo === 'checkbox' ? 'selected' : ''}>Checkbox</option>
             <option value="text" ${tipo === 'text' ? 'selected' : ''}>Campo de Texto</option>
@@ -219,7 +121,6 @@ function addTemplateItem(texto = '', tipo = 'checkbox', index = null) {
     container.appendChild(itemDiv);
 }
 
-// Remover item do template
 function removerTemplateItem(button) {
     if (document.getElementById('template-itens-container').children.length > 1) {
         button.parentElement.remove();
@@ -282,52 +183,113 @@ function excluirTemplateConfirm(templateId) {
         if (excluirTemplate(templateId)) {
             alert('Template excluído com sucesso!');
             carregarTemplatesAdmin();
+        } else {
+            alert('Não é possível excluir templates padrão do sistema.');
         }
     }
 }
 
-// No carregarAdmin() - ADICIONAR carregamento de templates
-function carregarAdmin() {
-    loadUsersList();
-    updateAdminStats();
-    carregarTemplatesAdmin(); // 👈 NOVA LINHA - Carrega templates quando admin entra
+// User management functions
+function showCreateUserModal() {
+    document.getElementById('modal-title').textContent = 'Criar Novo Usuário';
+    document.getElementById('user-form').reset();
+    document.getElementById('edit-username').value = '';
+    document.getElementById('modal-username').readOnly = false;
+    document.getElementById('user-modal').style.display = 'flex';
 }
 
-// Função para carregar lista de templates
-function carregarTemplatesAdmin() {
-    const templatesList = document.getElementById('templates-list');
-    if (!templatesList) {
-        console.log('Elemento templates-list não encontrado - usuário não é admin');
-        return;
+function closeUserModal() {
+    document.getElementById('user-modal').style.display = 'none';
+}
+
+function editUser(username) {
+    const user = users[username];
+    document.getElementById('modal-title').textContent = 'Editar Usuário';
+    document.getElementById('edit-username').value = username;
+    document.getElementById('modal-username').value = username;
+    document.getElementById('modal-username').readOnly = true;
+    document.getElementById('modal-password').value = user.password;
+    document.getElementById('modal-name').value = user.name;
+    document.getElementById('modal-role').value = user.role;
+    document.getElementById('user-modal').style.display = 'flex';
+}
+
+function changePassword(username) {
+    const newPassword = prompt(`Digite a nova senha para ${username}:`, users[username].password);
+    if (newPassword) {
+        users[username].password = newPassword;
+        localStorage.setItem('checklist_users', JSON.stringify(users));
+        loadUsersList();
+        alert('Senha alterada com sucesso!');
+    }
+}
+
+function deleteUser(username) {
+    if (confirm(`Tem certeza que deseja excluir o usuário "${username}"?`)) {
+        delete users[username];
+        localStorage.setItem('checklist_users', JSON.stringify(users));
+        loadUsersList();
+        updateAdminStats();
+        alert('Usuário excluído com sucesso!');
+    }
+}
+
+// Processar formulário de usuário
+document.getElementById('user-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const editUsername = document.getElementById('edit-username').value;
+    const username = document.getElementById('modal-username').value;
+    const password = document.getElementById('modal-password').value;
+    const name = document.getElementById('modal-name').value;
+    const role = document.getElementById('modal-role').value;
+    
+    if (editUsername) {
+        // Editar usuário existente
+        users[editUsername].password = password;
+        users[editUsername].name = name;
+        users[editUsername].role = role;
+    } else {
+        // Criar novo usuário
+        if (users[username]) {
+            alert('Usuário já existe!');
+            return;
+        }
+        users[username] = {
+            password: password,
+            name: name,
+            role: role,
+            createdAt: new Date().toISOString()
+        };
     }
     
-    templatesList.innerHTML = '';
-    const templates = listarTemplates();
+    localStorage.setItem('checklist_users', JSON.stringify(users));
+    loadUsersList();
+    updateAdminStats();
+    closeUserModal();
+    alert(editUsername ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
+});
+
+function updateAdminStats() {
+    document.getElementById('admin-total-users').textContent = Object.keys(users).length;
+    document.getElementById('admin-total-checklists').textContent = historico.length;
+    document.getElementById('admin-pendentes').textContent = checklists.filter(c => c.status === 'pendente').length;
+}
+
+function exportUsers() {
+    const dataStr = JSON.stringify(users, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
-    if (Object.keys(templates).length === 0) {
-        templatesList.innerHTML = '<div class="empty-state">Nenhum template criado ainda</div>';
-        return;
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', 'usuarios_sistema.json');
+    linkElement.click();
+}
+
+function resetSystem() {
+    if (confirm('ATENÇÃO: Isso irá resetar todo o sistema. Tem certeza?')) {
+        localStorage.clear();
+        alert('Sistema reiniciado. A página será recarregada.');
+        location.reload();
     }
-    
-    Object.keys(templates).forEach(templateId => {
-        const template = templates[templateId];
-        const templateItem = document.createElement('div');
-        templateItem.className = 'template-item';
-        templateItem.innerHTML = `
-            <div class="template-info">
-                <strong>${template.nome}</strong>
-                <span style="color: #7f8c8d;">(ID: ${templateId})</span>
-                <div style="font-size: 12px; color: #95a5a6; margin-top: 5px;">
-                    ${template.itens.length} itens • ${template.observacoes ? 'Com observações' : 'Sem observações'}
-                </div>
-            </div>
-            <div class="template-actions">
-                <button class="btn btn-sm" onclick="editarTemplateModal('${templateId}')">Editar</button>
-                <button class="btn btn-sm btn-warning" onclick="visualizarTemplate('${templateId}')">Visualizar</button>
-                ${!['admin', 'gerencia', 'lider'].includes(templateId) ? 
-                    `<button class="btn btn-sm btn-danger" onclick="excluirTemplateConfirm('${templateId}')">Excluir</button>` : ''}
-            </div>
-        `;
-        templatesList.appendChild(templateItem);
-    });
 }
