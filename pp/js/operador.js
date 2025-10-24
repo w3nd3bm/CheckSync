@@ -2,21 +2,34 @@
 function salvarRascunho() {
     const form = document.getElementById('checklist-form');
     const formData = new FormData(form);
+    const maquina = formData.get('maquina');
+    
+    if (!maquina) {
+        alert('Por favor, selecione uma máquina.');
+        return;
+    }
+    
+    // Coletar dados dos itens dinâmicos
+    const template = getTemplate(maquina);
+    const itensData = {};
+    
+    template.itens.forEach(item => {
+        if (item.tipo === 'checkbox') {
+            itensData[item.id] = document.getElementById(item.id)?.checked || false;
+        } else {
+            itensData[item.id] = document.getElementById(item.id)?.value || '';
+        }
+    });
     
     const rascunho = {
         id: Date.now(),
         operador: formData.get('operador'),
-        maquina: formData.get('maquina'),
+        maquina: maquina,
         data: formData.get('data'),
-        itens: {
-            item1: document.getElementById('item1').checked,
-            item2: document.getElementById('item2').checked,
-            item3: document.getElementById('item3').checked,
-            item4: document.getElementById('item4').checked,
-            item5: document.getElementById('item5').checked
-        },
+        itens: itensData,
         observacoes: formData.get('observacoes'),
-        status: 'rascunho'
+        status: 'rascunho',
+        template: maquina
     };
     
     rascunhos.push(rascunho);
@@ -29,27 +42,35 @@ function salvarRascunho() {
 function enviarParaAprovacao() {
     const form = document.getElementById('checklist-form');
     const formData = new FormData(form);
+    const maquina = formData.get('maquina');
     
-    if (!formData.get('operador') || !formData.get('maquina')) {
+    if (!formData.get('operador') || !maquina) {
         alert('Por favor, preencha todos os campos obrigatórios.');
         return;
     }
     
+    // Coletar dados dos itens dinâmicos
+    const template = getTemplate(maquina);
+    const itensData = {};
+    
+    template.itens.forEach(item => {
+        if (item.tipo === 'checkbox') {
+            itensData[item.id] = document.getElementById(item.id)?.checked || false;
+        } else {
+            itensData[item.id] = document.getElementById(item.id)?.value || '';
+        }
+    });
+    
     const checklist = {
         id: Date.now(),
         operador: formData.get('operador'),
-        maquina: formData.get('maquina'),
+        maquina: maquina,
         data: formData.get('data'),
-        itens: {
-            item1: document.getElementById('item1').checked,
-            item2: document.getElementById('item2').checked,
-            item3: document.getElementById('item3').checked,
-            item4: document.getElementById('item4').checked,
-            item5: document.getElementById('item5').checked
-        },
+        itens: itensData,
         observacoes: formData.get('observacoes'),
         status: 'pendente',
-        dataEnvio: new Date().toLocaleString()
+        dataEnvio: new Date().toLocaleString(),
+        template: maquina
     };
     
     checklists.push(checklist);
@@ -59,13 +80,19 @@ function enviarParaAprovacao() {
     form.reset();
     document.getElementById('operador').value = currentUser.name;
     document.getElementById('data').valueAsDate = new Date();
+    
+    // Limpar itens dinâmicos
+    const itensContainer = document.querySelector('.checklist-itens-container');
+    itensContainer.innerHTML = '';
 }
 
 function carregarRascunhos() {
     const listaRascunhos = document.getElementById('lista-rascunhos');
     const containerRascunhos = document.getElementById('rascunhos-operador');
     
-    const userRascunhos = rascunhos.filter(r => r.operador === currentUser.username);
+    if (!listaRascunhos || !containerRascunhos) return;
+    
+    const userRascunhos = rascunhos.filter(r => r.operador === currentUser.name);
     
     if (userRascunhos.length === 0) {
         listaRascunhos.innerHTML = '<div class="empty-state">Nenhum rascunho salvo</div>';
@@ -99,13 +126,25 @@ function carregarRascunho(id) {
     document.getElementById('operador').value = rascunho.operador;
     document.getElementById('maquina').value = rascunho.maquina;
     document.getElementById('data').value = rascunho.data;
-    document.getElementById('observacoes').value = rascunho.observacoes;
+    document.getElementById('observacoes').value = rascunho.observacoes || '';
     
-    document.getElementById('item1').checked = rascunho.itens.item1;
-    document.getElementById('item2').checked = rascunho.itens.item2;
-    document.getElementById('item3').checked = rascunho.itens.item3;
-    document.getElementById('item4').checked = rascunho.itens.item4;
-    document.getElementById('item5').checked = rascunho.itens.item5;
+    // Carregar template correspondente
+    const template = getTemplate(rascunho.maquina);
+    if (template) {
+        renderizarChecklist(template);
+        
+        // Preencher valores dos itens
+        template.itens.forEach(item => {
+            const element = document.getElementById(item.id);
+            if (element) {
+                if (item.tipo === 'checkbox') {
+                    element.checked = rascunho.itens[item.id] || false;
+                } else {
+                    element.value = rascunho.itens[item.id] || '';
+                }
+            }
+        });
+    }
     
     excluirRascunho(id);
 }
