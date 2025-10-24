@@ -1,6 +1,8 @@
 // Funções do Líder
 function carregarChecklistsPendentes() {
     const listaPendentes = document.getElementById('lista-pendentes');
+    if (!listaPendentes) return;
+    
     const pendentes = checklists.filter(c => c.status === 'pendente');
     
     if (pendentes.length === 0) {
@@ -34,6 +36,40 @@ function verDetalhesChecklist(id) {
     document.getElementById('detalhes-checklist').classList.remove('hidden');
     
     const detalhesConteudo = document.getElementById('detalhes-conteudo');
+    const template = getTemplate(checklist.maquina);
+    
+    let itensHTML = '';
+    if (template) {
+        template.itens.forEach(item => {
+            const valor = checklist.itens[item.id];
+            let valorExibicao = '';
+            
+            if (item.tipo === 'checkbox') {
+                valorExibicao = valor ? '✅ OK' : '❌ NÃO OK';
+            } else {
+                valorExibicao = valor || 'Não informado';
+            }
+            
+            itensHTML += `
+                <div class="${item.tipo === 'checkbox' && valor ? 'checklist-item ok' : 'checklist-item not-ok'}">
+                    <span>${item.texto}</span>
+                    <span>${valorExibicao}</span>
+                </div>
+            `;
+        });
+    } else {
+        // Fallback para templates antigos
+        Object.keys(checklist.itens).forEach(key => {
+            const valor = checklist.itens[key];
+            itensHTML += `
+                <div class="${valor ? 'checklist-item ok' : 'checklist-item not-ok'}">
+                    <span>${key}</span>
+                    <span>${valor ? 'OK' : 'NÃO OK'}</span>
+                </div>
+            `;
+        });
+    }
+    
     detalhesConteudo.innerHTML = `
         <div class="checklist-summary">
             <p><strong>Operador:</strong> ${checklist.operador}</p>
@@ -42,26 +78,7 @@ function verDetalhesChecklist(id) {
             <p><strong>Enviado em:</strong> ${checklist.dataEnvio}</p>
             
             <h4 style="margin-top: 20px;">Itens Verificados:</h4>
-            <div class="${checklist.itens.item1 ? 'checklist-item ok' : 'checklist-item not-ok'}">
-                <span>Verificar nível de óleo</span>
-                <span>${checklist.itens.item1 ? 'OK' : 'NÃO OK'}</span>
-            </div>
-            <div class="${checklist.itens.item2 ? 'checklist-item ok' : 'checklist-item not-ok'}">
-                <span>Verificar pressão do sistema hidráulico</span>
-                <span>${checklist.itens.item2 ? 'OK' : 'NÃO OK'}</span>
-            </div>
-            <div class="${checklist.itens.item3 ? 'checklist-item ok' : 'checklist-item not-ok'}">
-                <span>Verificar tensão das correias</span>
-                <span>${checklist.itens.item3 ? 'OK' : 'NÃO OK'}</span>
-            </div>
-            <div class="${checklist.itens.item4 ? 'checklist-item ok' : 'checklist-item not-ok'}">
-                <span>Verificar funcionamento dos sensores de segurança</span>
-                <span>${checklist.itens.item4 ? 'OK' : 'NÃO OK'}</span>
-            </div>
-            <div class="${checklist.itens.item5 ? 'checklist-item ok' : 'checklist-item not-ok'}">
-                <span>Limpar área de trabalho</span>
-                <span>${checklist.itens.item5 ? 'OK' : 'NÃO OK'}</span>
-            </div>
+            ${itensHTML}
             
             <p style="margin-top: 15px;"><strong>Observações do Operador:</strong> ${checklist.observacoes || 'Nenhuma'}</p>
         </div>
@@ -128,6 +145,7 @@ function rejeitarChecklist() {
 
 function carregarHistorico() {
     const historicoAprovacoes = document.getElementById('historico-aprovacoes');
+    if (!historicoAprovacoes) return;
     
     if (historico.length === 0) {
         historicoAprovacoes.innerHTML = '<div class="empty-state">Nenhum checklist no histórico</div>';
